@@ -1,4 +1,4 @@
-export 'src/qubit.dart' show Qubit;
+export 'src/qubit.dart' show Qubit, BaseQubit;
 export 'src/super_qubit.dart' show SuperQubit;
 export 'src/event_handler.dart'
     show

@@ -107,6 +107,15 @@ class CartItemsQubit extends Qubit<CartItemsEvent, CartItemsState> {
     on<ClearCartEvent>((event, emit) {
       emit(const CartItemsState(items: []));
       print('  [CartItemsQubit] Cart cleared');
+      // Direct sibling communication!
+      dispatch<LoadQubit, LoadEvent>(LoadEvent());
+    });
+
+    // Listen to sibling state changes!
+    listenTo<LoadQubit>((state) {
+      if (state is LoadState && state.isLoading) {
+        print('  [CartItemsQubit] Sibling (LoadQubit) is loading...');
+      }
     });
   }
 }
@@ -124,14 +133,6 @@ class CartSuperQubit extends SuperQubit {
   /// Must be called after registerQubits().
   void init() {
     print('[CartSuperQubit] Initializing handlers...');
-
-    // Cross-Qubit communication: When cart becomes empty, trigger reload
-    listenTo<CartItemsQubit>((dynamic state) async {
-      if (state is CartItemsState && state.isEmpty) {
-        print('  [CartSuperQubit] Cart is empty, triggering load...');
-        await dispatch<LoadQubit, LoadEvent>(LoadEvent());
-      }
-    });
 
     // Parent-level event handler: Log all add item events
     on<CartItemsQubit, AddItemEvent>((event, emit) async {

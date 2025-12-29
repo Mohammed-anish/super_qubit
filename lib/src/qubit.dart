@@ -15,6 +15,12 @@ abstract class BaseQubit {
   /// Add an event to be processed.
   Future<void> add(dynamic event);
 
+  /// Dispatch an event to another sibling Qubit via parent.
+  Future<void> dispatch<T extends BaseQubit, E>(E event);
+
+  /// Listen to state changes from another sibling Qubit via parent.
+  void listenTo<T extends BaseQubit>(void Function(dynamic state) callback);
+
   /// Close the Qubit.
   Future<void> close();
 
@@ -114,41 +120,47 @@ abstract class Qubit<Event, State> implements BaseQubit {
     }
 
     final eventType = typedEvent.runtimeType;
-    // ... existing logic ...
 
-    // Check if parent should handle this event
-    final shouldCheckParent = _parent != null;
-    bool parentHasHandler = false;
-
-    if (shouldCheckParent) {
-      parentHasHandler = _parent.hasParentHandlerForChild(
-        runtimeType,
-        eventType,
-      );
-    }
-
-    // Get handlers for this event type
+    // Execute handlers
     final handlers = _eventHandlers[eventType];
-
     if (handlers != null) {
       for (final entry in handlers) {
         // Check if we should skip this handler
-        if (entry.config.ignoreWhenParentDefines && parentHasHandler) {
-          continue; // Skip child handler
-        }
+        final isIgnoredByParent =
+            entry.config.ignoreWhenParentDefines &&
+            _hasParentHandler(eventType);
+        if (isIgnoredByParent) continue;
 
-        // Execute handler using dynamic invocation to avoid type casting issues
-        final result = entry.handler(event, Emitter<State>(_emit));
-        if (result is Future) {
-          await result;
-        }
+        final result = entry.handler(typedEvent, Emitter<State>(_emit));
+        if (result is Future) await result;
       }
     }
 
-    // Notify parent to handle event if it has handlers
-    if (shouldCheckParent && parentHasHandler) {
-      await _parent.handleChildEvent(runtimeType, event);
+    // Notify parent
+    if (_parent != null) {
+      await _parent.handleChildEvent(runtimeType, typedEvent);
     }
+  }
+
+  bool _hasParentHandler(Type eventType) {
+    if (_parent == null) return false;
+    return _parent.hasParentHandlerForChild(runtimeType, eventType);
+  }
+
+  @override
+  Future<void> dispatch<T extends BaseQubit, E>(E event) async {
+    if (_parent == null) {
+      throw StateError('Cannot dispatch to sibling: Qubit has no parent');
+    }
+    await _parent.dispatch<T, E>(event);
+  }
+
+  @override
+  void listenTo<T extends BaseQubit>(void Function(dynamic state) callback) {
+    if (_parent == null) {
+      throw StateError('Cannot listen to sibling: Qubit has no parent');
+    }
+    _parent.listenTo<T>(callback);
   }
 
   /// The emitter used to emit new states.
