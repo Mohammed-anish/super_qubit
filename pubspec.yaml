@@ -1,7 +1,16 @@
 name: super_qubit
-description: A hierarchical state management library for Flutter with SuperQubit and Qubit support.
+description: Hierarchical state management for Flutter. Manage multiple states with event propagation control, cross-communication, and parent-child event handling patterns.
 version: 0.1.0
-# repository: https://github.com/my_org/my_repo
+homepage: https://github.com/Mohammed-anish/super_qubit
+repository: https://github.com/Mohammed-anish/super_qubit
+issue_tracker: https://github.com/Mohammed-anish/super_qubit/issues
+
+topics:
+  - state-management
+  - flutter
+  - hierarchical
+  - events
+  - architecture
 
 environment:
   sdk: ^3.10.1
@@ -10,6 +19,7 @@ dependencies:
   flutter:
     sdk: flutter
   meta: ^1.15.0
+  nested: ^1.0.0
 
 dev_dependencies:
   flutter_test:

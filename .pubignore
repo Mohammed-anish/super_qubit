@@ -1,0 +1,31 @@
+# Development documentation
+DESIGN_SPEC.md
+HOT_RESTART_REQUIRED.md
+inspiration.txt
+
+# Development tools
+bin/
+
+# Redundant examples (keep only /example)
+dart_example/
+multi_state_example/
+
+# Build outputs
+build/
+*.log
+
+# Lock files
+pubspec.lock
+example/pubspec.lock
+multi_state_example/pubspec.lock
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*~

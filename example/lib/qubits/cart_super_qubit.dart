@@ -15,7 +15,8 @@ class CartSuperQubit extends SuperQubit {
   CartSuperQubit();
 
   /// Initialize handlers after Qubits are registered.
-  /// This is called automatically by QubitProvider.
+  /// This is called automatically after registerQubits.
+  @override
   void init() {
     // Cross-Qubit communication: When cart becomes empty, trigger reload
     listenTo<CartItemsQubit>((dynamic state) {

@@ -8,7 +8,11 @@ export 'src/event_handler.dart'
         ParentEventHandler,
         ignoreWhenParentDefines,
         ignoreWhenChildDefines;
-export 'src/qubit_provider.dart' show QubitProvider, InheritedQubitProvider;
+export 'src/qubit_provider.dart'
+    show
+        SuperQubitProvider,
+        MultiSuperQubitProvider,
+        InheritedSuperQubitProvider;
 export 'src/qubit_builder.dart' show QubitBuilder, QubitListener, QubitConsumer;
 export 'src/extensions.dart'
     show

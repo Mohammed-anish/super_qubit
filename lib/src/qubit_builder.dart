@@ -68,7 +68,8 @@ class _QubitBuilderState<Q extends BaseQubit, S>
         });
       }
     } catch (e) {
-      // Error handling is done in build or left to the user's provider structure
+      // Error handling is done in build method which calls _getSuperQubit
+      // and properly throws StateError if provider is missing
     }
   }
 
@@ -76,7 +77,7 @@ class _QubitBuilderState<Q extends BaseQubit, S>
     SuperQubit? found;
     context.visitAncestorElements((element) {
       final widget = element.widget;
-      if (widget is InheritedQubitProvider) {
+      if (widget is InheritedSuperQubitProvider) {
         if (widget.superQubitType == this.widget.superQubitType) {
           found = widget.superQubit;
           return false;
@@ -87,7 +88,7 @@ class _QubitBuilderState<Q extends BaseQubit, S>
 
     if (found == null) {
       throw StateError(
-        'No QubitProvider<${widget.superQubitType}> found in context',
+        'No SuperQubitProvider<${widget.superQubitType}> found in context',
       );
     }
     return found!;
@@ -174,14 +175,17 @@ class _QubitListenerState<Q extends BaseQubit, S>
           }
         });
       }
-    } catch (e) {}
+    } catch (e) {
+      // Error is intentionally ignored here; if provider is missing,
+      // the build method doesn't show error but listener won't work
+    }
   }
 
   SuperQubit _getSuperQubit() {
     SuperQubit? found;
     context.visitAncestorElements((element) {
       final widget = element.widget;
-      if (widget is InheritedQubitProvider) {
+      if (widget is InheritedSuperQubitProvider) {
         if (widget.superQubitType == this.widget.superQubitType) {
           found = widget.superQubit;
           return false;
@@ -192,7 +196,7 @@ class _QubitListenerState<Q extends BaseQubit, S>
 
     if (found == null) {
       throw StateError(
-        'No QubitProvider<${widget.superQubitType}> found in context',
+        'No SuperQubitProvider<${widget.superQubitType}> found in context',
       );
     }
     return found!;
@@ -276,14 +280,17 @@ class _QubitConsumerState<Q extends BaseQubit, S>
           }
         });
       }
-    } catch (e) {}
+    } catch (e) {
+      // Error handling is done in build method which calls _getSuperQubit
+      // and properly throws StateError if provider is missing
+    }
   }
 
   SuperQubit _getSuperQubit() {
     SuperQubit? found;
     context.visitAncestorElements((element) {
       final widget = element.widget;
-      if (widget is InheritedQubitProvider) {
+      if (widget is InheritedSuperQubitProvider) {
         if (widget.superQubitType == this.widget.superQubitType) {
           found = widget.superQubit;
           return false;
@@ -294,7 +301,7 @@ class _QubitConsumerState<Q extends BaseQubit, S>
 
     if (found == null) {
       throw StateError(
-        'No QubitProvider<${widget.superQubitType}> found in context',
+        'No SuperQubitProvider<${widget.superQubitType}> found in context',
       );
     }
     return found!;

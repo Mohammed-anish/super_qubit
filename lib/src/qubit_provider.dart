@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:nested/nested.dart';
 import 'super_qubit.dart';
 import 'qubit.dart';
 
@@ -9,67 +10,65 @@ import 'qubit.dart';
 ///
 /// Example:
 /// ```dart
-/// QubitProvider<CartSuperQubit>(
+/// SuperQubitProvider<CartSuperQubit>(
 ///   superQubit: CartSuperQubit(),
-///   superStates: [LoadQubit(), CartItemsQubit(), CartFilterQubit()],
+///   qubits: [LoadQubit(), CartItemsQubit(), CartFilterQubit()],
 ///   child: MyApp(),
 /// )
 /// ```
-class QubitProvider<T extends SuperQubit> extends StatefulWidget {
+class SuperQubitProvider<T extends SuperQubit> extends SingleChildStatefulWidget {
   /// The SuperQubit instance to provide.
   final T superQubit;
 
   /// The list of child Qubits to register with the SuperQubit.
-  final List<BaseQubit> superStates;
+  final List<BaseQubit> qubits;
 
-  /// The widget below this widget in the tree.
-  final Widget child;
-
-  const QubitProvider({
+  const SuperQubitProvider({
     super.key,
     required this.superQubit,
-    required this.superStates,
-    required this.child,
+    required this.qubits,
+    super.child,
   });
 
   @override
-  State<QubitProvider<T>> createState() => _QubitProviderState<T>();
+  SingleChildState<SuperQubitProvider<T>> createState() =>
+      _SuperQubitProviderState<T>();
 
   /// Get the SuperQubit from the context.
   ///
   /// Set [listen] to false to get the SuperQubit without establishing a dependency.
   /// This is useful for dispatching events or calling methods without causing rebuilds.
   ///
-  /// This will throw if no QubitProvider is found in the widget tree.
+  /// This will throw if no SuperQubitProvider is found in the widget tree.
   static T of<T extends SuperQubit>(
     BuildContext context, {
     bool listen = true,
   }) {
     if (listen) {
       final provider = context
-          .dependOnInheritedWidgetOfExactType<InheritedQubitProvider<T>>();
+          .dependOnInheritedWidgetOfExactType<InheritedSuperQubitProvider<T>>();
       if (provider == null) {
-        throw StateError('No QubitProvider<$T> found in context');
+        throw StateError('No SuperQubitProvider<$T> found in context');
       }
       return provider.superQubit;
     } else {
       final element = context
-          .getElementForInheritedWidgetOfExactType<InheritedQubitProvider<T>>();
+          .getElementForInheritedWidgetOfExactType<InheritedSuperQubitProvider<T>>();
       if (element == null) {
-        throw StateError('No QubitProvider<$T> found in context');
+        throw StateError('No SuperQubitProvider<$T> found in context');
       }
-      return (element.widget as InheritedQubitProvider<T>).superQubit;
+      return (element.widget as InheritedSuperQubitProvider<T>).superQubit;
     }
   }
 }
 
-class _QubitProviderState<T extends SuperQubit>
-    extends State<QubitProvider<T>> {
+class _SuperQubitProviderState<T extends SuperQubit>
+    extends SingleChildState<SuperQubitProvider<T>> {
   @override
   void initState() {
     super.initState();
     // Register child Qubits with the SuperQubit
-    widget.superQubit.registerQubits(widget.superStates);
+    widget.superQubit.registerQubits(widget.qubits);
   }
 
   @override
@@ -80,28 +79,58 @@ class _QubitProviderState<T extends SuperQubit>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return InheritedQubitProvider<T>(
+  Widget buildWithChild(BuildContext context, Widget? child) {
+    return InheritedSuperQubitProvider<T>(
       superQubit: widget.superQubit,
       superQubitType: T,
-      child: widget.child,
+      child: child ?? const SizedBox.shrink(),
     );
   }
 }
 
 /// Internal InheritedWidget for providing the SuperQubit.
-class InheritedQubitProvider<T extends SuperQubit> extends InheritedWidget {
+class InheritedSuperQubitProvider<T extends SuperQubit> extends InheritedWidget {
   final T superQubit;
   final Type superQubitType;
 
-  const InheritedQubitProvider({
+  const InheritedSuperQubitProvider({
     required this.superQubit,
     required this.superQubitType,
     required super.child,
   });
 
   @override
-  bool updateShouldNotify(InheritedQubitProvider<T> oldWidget) {
+  bool updateShouldNotify(InheritedSuperQubitProvider<T> oldWidget) {
     return superQubit != oldWidget.superQubit;
   }
+}
+
+/// A widget that provides multiple [SuperQubit]s to its descendants.
+///
+/// This is a convenience widget that uses the `nested` package to nest
+/// multiple [SuperQubitProvider]s cleanly without deep indentation.
+///
+/// Example:
+/// ```dart
+/// MultiSuperQubitProvider(
+///   providers: [
+///     SuperQubitProvider<CartSuperQubit>(
+///       superQubit: CartSuperQubit(),
+///       qubits: [LoadQubit(), CartItemsQubit()],
+///     ),
+///     SuperQubitProvider<UserSuperQubit>(
+///       superQubit: UserSuperQubit(),
+///       qubits: [AuthQubit(), ProfileQubit()],
+///     ),
+///   ],
+///   child: MyApp(),
+/// )
+/// ```
+class MultiSuperQubitProvider extends Nested {
+  /// Creates a [MultiSuperQubitProvider] that nests multiple [SuperQubitProvider]s.
+  MultiSuperQubitProvider({
+    super.key,
+    required List<SuperQubitProvider> providers,
+    required Widget child,
+  }) : super(children: providers, child: child);
 }

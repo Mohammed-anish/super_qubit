@@ -14,7 +14,8 @@ import 'event_handler.dart';
 /// Example:
 /// ```dart
 /// class CartSuperQubit extends SuperQubit {
-///   CartSuperQubit() {
+///   @override
+///   void init() {
 ///     // Listen to child events
 ///     on<LoadQubit, LoadEvent>((event, emit) {
 ///       print('Parent handling load event');
@@ -23,7 +24,7 @@ import 'event_handler.dart';
 ///     // Cross-Qubit communication
 ///     listenTo<CartItemsQubit>((state) {
 ///       if (state.items.isEmpty) {
-///         dispatch<LoadQubit>(LoadEvent());
+///         dispatch<LoadQubit, LoadEvent>(LoadEvent());
 ///       }
 ///     });
 ///   }
@@ -53,6 +54,34 @@ abstract class SuperQubit {
       _qubits[type] = qubit;
       qubit.setParent(this);
     }
+    // Call init after all qubits are registered
+    init();
+  }
+
+  /// Initialize the SuperQubit after child Qubits are registered.
+  ///
+  /// Override this method to set up event handlers and state listeners.
+  /// This is called automatically after [registerQubits].
+  ///
+  /// Example:
+  /// ```dart
+  /// @override
+  /// void init() {
+  ///   // Cross-Qubit communication
+  ///   listenTo<CartItemsQubit>((state) {
+  ///     if (state.isEmpty) {
+  ///       dispatch<LoadQubit, LoadEvent>(LoadEvent());
+  ///     }
+  ///   });
+  ///
+  ///   // Parent-level event handlers
+  ///   on<LoadQubit, LoadEvent>((event, emit) {
+  ///     print('Parent handling load event');
+  ///   });
+  /// }
+  /// ```
+  void init() {
+    // Override in subclasses to set up handlers and listeners
   }
 
   /// Register a parent-level event handler for events targeting a specific child Qubit.

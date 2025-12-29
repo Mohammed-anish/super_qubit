@@ -13,7 +13,7 @@ extension QubitSingleContextExtensions on BuildContext {
   /// cart.items.add(AddItemEvent(...));
   /// ```
   T readSuper<T extends SuperQubit>() {
-    return QubitProvider.of<T>(this, listen: false);
+    return SuperQubitProvider.of<T>(this, listen: false);
   }
 
   /// Watch a SuperQubit and rebuild when any of its child Qubits change.
@@ -23,7 +23,7 @@ extension QubitSingleContextExtensions on BuildContext {
   /// final cart = context.watchSuper<CartSuperQubit>();
   /// ```
   T watchSuper<T extends SuperQubit>() {
-    return QubitProvider.of<T>(this, listen: true);
+    return SuperQubitProvider.of<T>(this, listen: true);
   }
 }
 
@@ -36,7 +36,7 @@ extension QubitDualContextExtensions on BuildContext {
   /// context.read<CartSuperQubit, CartItemsQubit>().add(AddItemEvent(...));
   /// ```
   Q read<T extends SuperQubit, Q extends BaseQubit>() {
-    return QubitProvider.of<T>(this, listen: false).getQubit<Q>();
+    return SuperQubitProvider.of<T>(this, listen: false).getQubit<Q>();
   }
 
   /// Watch a specific child Qubit and rebuild when its state changes.
@@ -47,7 +47,7 @@ extension QubitDualContextExtensions on BuildContext {
   /// if (loadQubit.state.isLoading) { ... }
   /// ```
   Q watch<T extends SuperQubit, Q extends BaseQubit>() {
-    return QubitProvider.of<T>(this, listen: true).getQubit<Q>();
+    return SuperQubitProvider.of<T>(this, listen: true).getQubit<Q>();
   }
 }
 
@@ -61,7 +61,7 @@ extension QubitStateExtensions on BuildContext {
   /// if (loadState.isLoading) { ... }
   /// ```
   S watchState<T extends SuperQubit, Q extends Qubit<dynamic, S>, S>() {
-    return QubitProvider.of<T>(this, listen: true).getQubit<Q>().state;
+    return SuperQubitProvider.of<T>(this, listen: true).getQubit<Q>().state;
   }
 
   /// Select a specific value from a child Qubit's state and rebuild only when that value changes.
@@ -75,7 +75,7 @@ extension QubitStateExtensions on BuildContext {
   R select<T extends SuperQubit, Q extends Qubit<dynamic, S>, S, R>(
     R Function(S state) selector,
   ) {
-    final qubit = QubitProvider.of<T>(this, listen: true).getQubit<Q>();
+    final qubit = SuperQubitProvider.of<T>(this, listen: true).getQubit<Q>();
     return selector(qubit.state);
   }
 }

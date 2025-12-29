@@ -1,3 +1,26 @@
 # https://dart.dev/guides/libraries/private-files
 # Created by `dart pub`
 .dart_tool/
+.packages
+pubspec.lock
+
+# Build outputs
+build/
+*.log
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Coverage
+coverage/
+
+# Test outputs
+.test_coverage.dart

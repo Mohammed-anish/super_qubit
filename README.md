@@ -4,7 +4,7 @@ A hierarchical state management library for Flutter with **SuperQubit** and **Qu
 
 ## Features
 
-✅ **Zero External Dependencies** - Uses only core Dart and Flutter SDK  
+✅ **Minimal Dependencies** - Uses only Flutter SDK and the `nested` package  
 ✅ **Hierarchical State Management** - One SuperQubit manages multiple Qubits  
 ✅ **Flexible Event Handling** - Both parent and child can handle events  
 ✅ **Cross-Qubit Communication** - Easy communication between Qubits via `dispatch` and `listenTo`  
@@ -18,8 +18,13 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  super_qubit:
-    path: ../super_qubit  # or your path
+  super_qubit: ^0.1.0
+```
+
+Then run:
+
+```bash
+flutter pub get
 ```
 
 ## Quick Start
@@ -51,18 +56,28 @@ class AddItemEvent {
 ```dart
 import 'package:super_qubit/super_qubit.dart';
 
-class LoadQubit extends Qubit<LoadState> {
-  LoadQubit() : super(LoadState()) {
+// Define Event base class
+abstract class LoadEventBase {}
+class LoadEvent extends LoadEventBase {}
+
+abstract class CartItemsEventBase {}
+class AddItemEvent extends CartItemsEventBase {
+  final Item item;
+  AddItemEvent(this.item);
+}
+
+class LoadQubit extends Qubit<LoadEventBase, LoadState> {
+  LoadQubit() : super(const LoadState()) {
     on<LoadEvent>((event, emit) async {
-      emit(LoadState(isLoading: true));
+      emit(const LoadState(isLoading: true));
       // Fetch data...
-      emit(LoadState(isLoading: false));
+      emit(const LoadState(isLoading: false));
     });
   }
 }
 
-class CartItemsQubit extends Qubit<CartItemsState> {
-  CartItemsQubit() : super(CartItemsState()) {
+class CartItemsQubit extends Qubit<CartItemsEventBase, CartItemsState> {
+  CartItemsQubit() : super(const CartItemsState()) {
     on<AddItemEvent>((event, emit) {
       final newItems = [...state.items, event.item];
       emit(CartItemsState(items: newItems));
@@ -75,20 +90,22 @@ class CartItemsQubit extends Qubit<CartItemsState> {
 
 ```dart
 class CartSuperQubit extends SuperQubit {
-  CartSuperQubit() {
+  @override
+  void init() {
     // Cross-Qubit communication
     listenTo<CartItemsQubit>((state) {
       if (state.items.isEmpty) {
-        dispatch<LoadQubit>(LoadEvent());
+        dispatch<LoadQubit, LoadEvent>(LoadEvent());
       }
     });
-    
+
     // Parent-level event handler
-    on<CartItemsQubit, AddItemEvent>((event) async {
-      print('Item added: ${event.item.name}');
+    on<CartItemsQubit, AddItemEvent>((event, emit) async {
+      // Handle at parent level (e.g., analytics)
+      // Child handler will also execute if not using ignoreWhenParentDefines
     });
   }
-  
+
   // Convenience getters
   LoadQubit get load => getQubit<LoadQubit>();
   CartItemsQubit get items => getQubit<CartItemsQubit>();
@@ -100,9 +117,9 @@ class CartSuperQubit extends SuperQubit {
 ```dart
 void main() {
   runApp(
-    QubitProvider<CartSuperQubit>(
+    SuperQubitProvider<CartSuperQubit>(
       superQubit: CartSuperQubit(),
-      superStates: [
+      qubits: [
         LoadQubit(),
         CartItemsQubit(),
       ],
@@ -118,15 +135,14 @@ void main() {
 class MyWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Access SuperQubit
-    final cart = context.read<CartSuperQubit>();
-    
-    // Listen to specific Qubit state
+    // Option 1: Using context extensions
+    final cart = context.readSuper<CartSuperQubit>();
+
     return StreamBuilder<CartItemsState>(
       stream: cart.items.stream,
       builder: (context, snapshot) {
-        final state = snapshot.data ?? CartItemsState();
-        
+        final state = snapshot.data ?? const CartItemsState();
+
         return Column(
           children: [
             Text('Items: ${state.items.length}'),
@@ -134,7 +150,32 @@ class MyWidget extends StatelessWidget {
               onPressed: () {
                 cart.items.add(AddItemEvent(Item('New Item')));
               },
-              child: Text('Add Item'),
+              child: const Text('Add Item'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+// Option 2: Using QubitBuilder (recommended)
+class MyWidgetWithBuilder extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return QubitBuilder<CartItemsQubit, CartItemsState>(
+      superQubitType: CartSuperQubit,
+      builder: (context, state) {
+        return Column(
+          children: [
+            Text('Items: ${state.items.length}'),
+            ElevatedButton(
+              onPressed: () {
+                context
+                    .read<CartSuperQubit, CartItemsQubit>()
+                    .add(AddItemEvent(Item('New Item')));
+              },
+              child: const Text('Add Item'),
             ),
           ],
         );
@@ -154,8 +195,8 @@ Control when parent and child handlers execute:
 Use in **child** Qubit to skip execution if parent has a handler:
 
 ```dart
-class LoadQubit extends Qubit<LoadState> {
-  LoadQubit() : super(LoadState()) {
+class LoadQubit extends Qubit<LoadEventBase, LoadState> {
+  LoadQubit() : super(const LoadState()) {
     on<LoadEvent>((event, emit) {
       // Only runs if parent doesn't handle it
     }, ignoreWhenParentDefines());
@@ -168,8 +209,9 @@ Use in **parent** SuperQubit to skip execution if child has a handler:
 
 ```dart
 class CartSuperQubit extends SuperQubit {
-  CartSuperQubit() {
-    on<LoadQubit, LoadEvent>((event) async {
+  @override
+  void init() {
+    on<LoadQubit, LoadEvent>((event, emit) async {
       // Only runs if LoadQubit doesn't handle it
     }, ignoreWhenChildDefines<LoadQubit>());
   }
@@ -183,11 +225,11 @@ Both parent and child execute in sequence:
 
 ### Cross-Qubit Communication
 
-#### `dispatch<T>(event)`
+#### `dispatch<T, E>(event)`
 Send an event to a specific child Qubit:
 
 ```dart
-dispatch<LoadQubit>(LoadEvent());
+dispatch<LoadQubit, LoadEvent>(LoadEvent());
 ```
 
 #### `listenTo<T>(callback)`
@@ -196,7 +238,7 @@ Listen to state changes from a child Qubit:
 ```dart
 listenTo<CartItemsQubit>((state) {
   if (state.items.isEmpty) {
-    dispatch<LoadQubit>(LoadEvent());
+    dispatch<LoadQubit, LoadEvent>(LoadEvent());
   }
 });
 ```
@@ -234,12 +276,16 @@ flutter run -d chrome  # or macos, ios, android
 
 ## API Reference
 
-### Qubit<State>
+### Qubit<Event, State>
 
 Base class for state management.
 
+**Type Parameters:**
+- `Event` - Base type for events this Qubit handles
+- `State` - Type of state this Qubit manages
+
 **Methods:**
-- `on<Event>(handler, [config])` - Register event handler
+- `on<E extends Event>(handler, [config])` - Register event handler
 - `add(event)` - Add event to be processed
 - `close()` - Close and clean up
 
@@ -255,30 +301,66 @@ Container for managing multiple child Qubits.
 **Methods:**
 - `registerQubits(qubits)` - Register child Qubits
 - `on<ChildQubit, Event>(handler, [config])` - Register parent event handler
-- `dispatch<T>(event)` - Dispatch event to child Qubit
+- `dispatch<T, E>(event)` - Dispatch event to child Qubit
 - `listenTo<T>(callback)` - Listen to child state changes
 - `getQubit<T>()` - Get child Qubit by type
 - `getState<T, S>()` - Get child Qubit state
 - `close()` - Close SuperQubit and all children
 
-### QubitProvider<T>
+### SuperQubitProvider<T>
 
 Widget that provides SuperQubit to descendants.
 
 **Parameters:**
 - `superQubit` - SuperQubit instance
-- `superStates` - List of child Qubits
+- `qubits` - List of child Qubits
 - `child` - Widget tree
 
 **Static Methods:**
-- `QubitProvider.of<T>(context)` - Get SuperQubit from context
+- `SuperQubitProvider.of<T>(context)` - Get SuperQubit from context
+
+### MultiSuperQubitProvider
+
+Widget that provides multiple SuperQubits to descendants.
+
+Convenience widget built on the `nested` package that nests multiple SuperQubitProviders cleanly without deep indentation.
+
+**Example:**
+```dart
+MultiSuperQubitProvider(
+  providers: [
+    SuperQubitProvider<CartSuperQubit>(
+      superQubit: CartSuperQubit(),
+      qubits: [LoadQubit(), CartItemsQubit()],
+    ),
+    SuperQubitProvider<UserSuperQubit>(
+      superQubit: UserSuperQubit(),
+      qubits: [AuthQubit(), ProfileQubit()],
+    ),
+    SuperQubitProvider<SettingsSuperQubit>(
+      superQubit: SettingsSuperQubit(),
+      qubits: [ThemeQubit()],
+    ),
+  ],
+  child: MyApp(),
+)
+```
+
+**Parameters:**
+- `providers` - List of SuperQubitProvider instances
+- `child` - Widget tree
 
 ### Context Extensions
 
-- `context.read<T>()` - Get SuperQubit without listening
-- `context.watch<T>()` - Get SuperQubit and listen
-- `context.watchQubit<T, Q, S>()` - Watch specific child Qubit
-- `context.select<T, R>(selector)` - Select specific value
+**For SuperQubit access:**
+- `context.readSuper<T>()` - Get SuperQubit without listening
+- `context.watchSuper<T>()` - Get SuperQubit and listen
+
+**For child Qubit access:**
+- `context.read<T, Q>()` - Get child Qubit without listening
+- `context.watch<T, Q>()` - Get child Qubit and listen
+- `context.watchState<T, Q, S>()` - Watch specific child Qubit state
+- `context.select<T, Q, S, R>(selector)` - Select specific value from state
 
 ## Advantages
 
