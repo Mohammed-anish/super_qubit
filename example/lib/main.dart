@@ -59,7 +59,9 @@ class AppWithTheme extends StatelessWidget {
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
               seedColor: Colors.deepPurple,
-              brightness: themeState.isDark ? Brightness.dark : Brightness.light,
+              brightness: themeState.isDark
+                  ? Brightness.dark
+                  : Brightness.light,
             ),
             useMaterial3: true,
           ),
@@ -98,10 +100,7 @@ class _HomePageState extends State<HomePage> {
             icon: Icon(Icons.shopping_cart),
             label: 'Cart',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'User',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
@@ -370,9 +369,7 @@ class UserPage extends StatelessWidget {
                   return const Card(
                     child: Padding(
                       padding: EdgeInsets.all(16.0),
-                      child: Center(
-                        child: CircularProgressIndicator(),
-                      ),
+                      child: Center(child: CircularProgressIndicator()),
                     ),
                   );
                 }
@@ -404,7 +401,11 @@ class UserPage extends StatelessWidget {
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        const Icon(Icons.check_circle, size: 48, color: Colors.green),
+                        const Icon(
+                          Icons.check_circle,
+                          size: 48,
+                          color: Colors.green,
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           'Logged in as ${authState.username}',
@@ -413,7 +414,9 @@ class UserPage extends StatelessWidget {
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: () {
-                            context.read<UserSuperQubit, AuthQubit>().add(LogoutEvent());
+                            context.read<UserSuperQubit, AuthQubit>().add(
+                              LogoutEvent(),
+                            );
                           },
                           icon: const Icon(Icons.logout),
                           label: const Text('Logout'),
@@ -438,7 +441,10 @@ class UserPage extends StatelessWidget {
                       children: [
                         const Text(
                           'Profile Information',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text('Name: ${profileState.displayName ?? "Not set"}'),
@@ -533,7 +539,10 @@ class SettingsPage extends StatelessWidget {
                   children: [
                     const Text(
                       'Appearance',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     QubitBuilder<ThemeQubit, ThemeState>(
@@ -551,7 +560,9 @@ class SettingsPage extends StatelessWidget {
                             );
                           },
                           secondary: Icon(
-                            themeState.isDark ? Icons.dark_mode : Icons.light_mode,
+                            themeState.isDark
+                                ? Icons.dark_mode
+                                : Icons.light_mode,
                           ),
                         );
                       },

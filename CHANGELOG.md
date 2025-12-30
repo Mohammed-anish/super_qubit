@@ -1,3 +1,8 @@
+## 0.1.1
+
+- Dart Formatting fix
+
+
 ## 0.1.0
 
 - Initial release of SuperQubit

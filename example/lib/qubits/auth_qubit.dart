@@ -8,10 +8,7 @@ class AuthQubit extends Qubit<UserEventBase, AuthState> {
       emit(const AuthState(isLoggingIn: true));
       // Simulate login
       await Future.delayed(const Duration(seconds: 1));
-      emit(AuthState(
-        isLoggedIn: true,
-        username: event.username,
-      ));
+      emit(AuthState(isLoggedIn: true, username: event.username));
     });
 
     on<LogoutEvent>((event, emit) {

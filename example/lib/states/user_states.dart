@@ -16,8 +16,5 @@ class ProfileState {
   final String? displayName;
   final String? email;
 
-  const ProfileState({
-    this.displayName,
-    this.email,
-  });
+  const ProfileState({this.displayName, this.email});
 }

@@ -16,7 +16,8 @@ import 'qubit.dart';
 ///   child: MyApp(),
 /// )
 /// ```
-class SuperQubitProvider<T extends SuperQubit> extends SingleChildStatefulWidget {
+class SuperQubitProvider<T extends SuperQubit>
+    extends SingleChildStatefulWidget {
   /// The SuperQubit instance to provide.
   final T superQubit;
 
@@ -53,7 +54,9 @@ class SuperQubitProvider<T extends SuperQubit> extends SingleChildStatefulWidget
       return provider.superQubit;
     } else {
       final element = context
-          .getElementForInheritedWidgetOfExactType<InheritedSuperQubitProvider<T>>();
+          .getElementForInheritedWidgetOfExactType<
+            InheritedSuperQubitProvider<T>
+          >();
       if (element == null) {
         throw StateError('No SuperQubitProvider<$T> found in context');
       }
@@ -89,7 +92,8 @@ class _SuperQubitProviderState<T extends SuperQubit>
 }
 
 /// Internal InheritedWidget for providing the SuperQubit.
-class InheritedSuperQubitProvider<T extends SuperQubit> extends InheritedWidget {
+class InheritedSuperQubitProvider<T extends SuperQubit>
+    extends InheritedWidget {
   final T superQubit;
   final Type superQubitType;
 

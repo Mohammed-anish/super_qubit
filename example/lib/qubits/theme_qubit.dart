@@ -5,9 +5,7 @@ import '../states/settings_states.dart';
 class ThemeQubit extends Qubit<SettingsEventBase, ThemeState> {
   ThemeQubit() : super(const ThemeState()) {
     on<ToggleThemeEvent>((event, emit) {
-      emit(ThemeState(
-        isDark: !state.isDark,
-      ));
+      emit(ThemeState(isDark: !state.isDark));
     });
 
     on<SetThemeEvent>((event, emit) {

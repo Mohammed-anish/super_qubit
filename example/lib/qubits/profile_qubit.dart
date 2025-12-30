@@ -5,10 +5,7 @@ import '../states/user_states.dart';
 class ProfileQubit extends Qubit<UserEventBase, ProfileState> {
   ProfileQubit() : super(const ProfileState()) {
     on<UpdateProfileEvent>((event, emit) {
-      emit(ProfileState(
-        displayName: event.displayName,
-        email: event.email,
-      ));
+      emit(ProfileState(displayName: event.displayName, email: event.email));
     });
   }
 }
