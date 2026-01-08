@@ -1,5 +1,6 @@
 export 'src/qubit.dart' show Qubit, BaseQubit;
 export 'src/super_qubit.dart' show SuperQubit;
+export 'src/devtools.dart' show SuperQubitDevTools;
 export 'src/event_handler.dart'
     show
         EventHandler,

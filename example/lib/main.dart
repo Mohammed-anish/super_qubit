@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:super_qubit/super_qubit.dart';
 import 'qubits/cart_super_qubit.dart';
 import 'qubits/load_qubit.dart';
@@ -17,6 +18,9 @@ import 'states/user_states.dart';
 import 'states/settings_states.dart';
 
 void main() {
+  if (kDebugMode) {
+    SuperQubitDevTools.enable();
+  }
   runApp(const MyApp());
 }
 

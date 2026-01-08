@@ -1,7 +1,21 @@
+## 1.0.0
+
+- **DevTools Integration**: Added DevTools extension for `super_qubit`.
+- Logs `Qubit` and `SuperQubit` lifecycle events, events, and state changes.
+- Custom "SuperQubit" tab in DevTools for inspecting the qubit hierarchy and event logs.
+- New `SuperQubitDevTools.enable()` method.
+
+## 0.1.3
+
+- Enhanced MultiSuperQubitProvider implementation
+
+## 0.1.2
+
+- Added dispatcher functionality to Qubit for cross-qubit communication
+
 ## 0.1.1
 
 - Dart Formatting fix
-
 
 ## 0.1.0
 

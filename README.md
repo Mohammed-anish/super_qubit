@@ -4,13 +4,34 @@ A hierarchical state management library for Flutter with **SuperQubit** and **Qu
 
 ## Features
 
-✅ **Minimal Dependencies** - Uses only Flutter SDK and the `nested` package  
-✅ **Hierarchical State Management** - One SuperQubit manages multiple Qubits  
-✅ **Flexible Event Handling** - Both parent and child can handle events  
-✅ **Cross-Qubit Communication** - Easy communication between Qubits via `dispatch` and `listenTo`  
-✅ **Event Propagation Control** - Use flags to control when parent/child handlers execute  
-✅ **Type-Safe** - Full generic type support  
-✅ **Stream-Based** - Native Dart streams for state changes  
+- ✅ **Minimal Dependencies** - Uses only Flutter SDK and the `nested` package
+- ✅ **Hierarchical State Management** - One SuperQubit manages multiple Qubits
+- ✅ **Flexible Event Handling** - Both parent and child can handle events
+- ✅ **Cross-Qubit Communication** - Easy communication between Qubits via `dispatch` and `listenTo`
+- ✅ **Event Propagation Control** - Use flags to control when parent/child handlers execute
+- ✅ **Type-Safe** - Full generic type support
+- ✅ **Stream-Based** - Native Dart streams for state changes
+- ✅ **DevTools Integration** - Inspect Qubit hierarchy, events, and states directly in Flutter DevTools
+
+## Why This Exists
+
+As Flutter applications grow, managing multiple related pieces of state becomes complex. A single feature often requires **multiple states working together** - for example, a shopping cart needs loading state, items state, and filter state all coordinated under one domain.
+
+Traditional approaches require you to:
+
+- **Scatter related states** across multiple providers in the widget tree
+- **Manually coordinate** state updates between separate managers
+- **Write boilerplate** to enable communication between sibling state managers
+- **Nest multiple providers** creating deep widget hierarchies
+
+SuperQubit solves these challenges by introducing a hierarchical layer above individual state managers (Qubits). It allows you to:
+
+- **Group multiple states** under a single feature domain (one SuperQubit manages many Qubits)
+- **Coordinate automatically** with built-in communication via `dispatch` and `listenTo`
+- **Handle events flexibly** at both parent and child levels with propagation control
+- **Use one provider** for an entire feature instead of multiple nested providers
+
+This makes it ideal for complex features like shopping carts, multi-step forms, or dashboards where multiple states need to work together seamlessly as a cohesive unit.
 
 ## Installation
 
@@ -256,6 +277,29 @@ final loadState = superQubit.getState<LoadQubit, LoadState>();
 LoadQubit get load => getQubit<LoadQubit>();
 ```
 
+## DevTools Integration
+SuperQubit comes with a custom DevTools extension to help you debug your application. It allows you to:
+- **Inspect Hierarchy**: View all registered SuperQubits and their child Qubits.
+- **Track Events**: Real-time log of all events dispatched to specific Qubits.
+- **Monitor State**: View state changes as they happen.
+
+### Enabling DevTools
+Calls to `SuperQubitDevTools.enable()` should be made in your `main()` function. It is recommended to wrap this in a `kDebugMode` check to ensure it only runs during development.
+
+```dart
+import 'package:flutter/foundation.dart';
+import 'package:super_qubit/super_qubit.dart';
+
+void main() {
+  if (kDebugMode) {
+    SuperQubitDevTools.enable();
+  }
+  runApp(const MyApp());
+}
+```
+
+Once enabled, open Flutter DevTools and look for the **"SuperQubit"** tab.
+
 ## Example App
 
 See the `example/` directory for a complete shopping cart application demonstrating:
@@ -361,24 +405,6 @@ MultiSuperQubitProvider(
 - `context.watch<T, Q>()` - Get child Qubit and listen
 - `context.watchState<T, Q, S>()` - Watch specific child Qubit state
 - `context.select<T, Q, S, R>(selector)` - Select specific value from state
-
-## Advantages
-
-### vs. Regular Cubit/Bloc
-- ✅ Group related state managers together
-- ✅ Built-in cross-communication
-- ✅ Single provider for multiple states
-- ✅ Hierarchical event handling
-
-### vs. MultiBlocProvider
-- ✅ Less boilerplate
-- ✅ Type-safe cross-communication
-- ✅ Shared event handling logic
-
-### vs. Riverpod
-- ✅ More explicit event flow
-- ✅ Familiar Cubit/Bloc patterns
-- ✅ Better for complex state machines
 
 ## License
 

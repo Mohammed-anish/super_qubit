@@ -2,7 +2,6 @@
 # Created by `dart pub`
 .dart_tool/
 .packages
-pubspec.lock
 
 # Build outputs
 build/
@@ -24,3 +23,6 @@ coverage/
 
 # Test outputs
 .test_coverage.dart
+extension/devtools/build/
+FEATURES_ROADMAP.md
+MEDIUM_ARTICLE.md

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'event_handler.dart';
+import 'devtools.dart';
 
 /// Non-generic base class for Qubits to allow unified management.
 abstract class BaseQubit {
@@ -72,6 +73,9 @@ abstract class Qubit<Event, State> implements BaseQubit {
         }
       },
     );
+    if (SuperQubitDevTools.isEnabled) {
+      SuperQubitDevTools.onQubitCreated(this);
+    }
   }
 
   /// The current state.
@@ -117,6 +121,10 @@ abstract class Qubit<Event, State> implements BaseQubit {
       throw ArgumentError(
         'Event of type ${event.runtimeType} is not a valid $Event for this Qubit',
       );
+    }
+
+    if (SuperQubitDevTools.isEnabled) {
+      SuperQubitDevTools.onEvent(this, typedEvent);
     }
 
     final eventType = typedEvent.runtimeType;
@@ -175,6 +183,10 @@ abstract class Qubit<Event, State> implements BaseQubit {
 
     _state = newState;
     _stateController.add(newState);
+
+    if (SuperQubitDevTools.isEnabled) {
+      SuperQubitDevTools.onStateChange(this, newState);
+    }
   }
 
   /// Set the parent SuperQubit.
@@ -195,6 +207,10 @@ abstract class Qubit<Event, State> implements BaseQubit {
   @override
   Future<void> close() async {
     if (_isClosed) return;
+
+    if (SuperQubitDevTools.isEnabled) {
+      SuperQubitDevTools.onQubitClosed(this);
+    }
 
     _isClosed = true;
     await _stateController.close();

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'qubit.dart';
 import 'event_handler.dart';
+import 'devtools.dart';
 
 /// A SuperQubit manages multiple child Qubits and can intercept their events.
 ///
@@ -34,6 +35,12 @@ abstract class SuperQubit {
   /// Map of child Qubits by type.
   final Map<Type, BaseQubit> _qubits = {};
 
+  SuperQubit() {
+    if (SuperQubitDevTools.isEnabled) {
+      SuperQubitDevTools.onSuperQubitCreated(this);
+    }
+  }
+
   /// Map of parent event handlers.
   /// Key: (ChildQubitType, EventType)
   final Map<_HandlerKey, List<_ParentEventHandlerEntry>> _parentHandlers = {};
@@ -53,6 +60,10 @@ abstract class SuperQubit {
       final type = qubit.runtimeType;
       _qubits[type] = qubit;
       qubit.setParent(this);
+
+      if (SuperQubitDevTools.isEnabled) {
+        SuperQubitDevTools.onQubitRegistered(this, qubit);
+      }
     }
     // Call init after all qubits are registered
     init();
