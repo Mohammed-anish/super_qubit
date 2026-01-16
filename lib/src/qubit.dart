@@ -63,6 +63,13 @@ abstract class Qubit<Event, State> implements BaseQubit {
   /// Reference to parent SuperQubit if this is a child.
   dynamic _parent;
 
+  /// Controllers for transformed event streams.
+  final Map<EventHandlerEntry<State>, StreamController<Event>> _eventStreams =
+      {};
+
+  /// Pending actions to be executed once the parent is set.
+  final List<void Function()> _pendingInitializers = [];
+
   /// Creates a [Qubit] with the given initial [state].
   Qubit(State initialState) : _state = initialState {
     _stateController = StreamController<State>.broadcast(
@@ -98,14 +105,57 @@ abstract class Qubit<Event, State> implements BaseQubit {
   /// The [handler] will be called when an event of type [E] is added.
   /// Optionally provide a [config] to control event propagation behavior.
   void on<E extends Event>(
-    EventHandler<E, State> handler, [
+    EventHandler<E, State> handler, {
     EventHandlerConfig config = const EventHandlerConfig(),
-  ]) {
+  }) {
     final eventType = E;
     if (!_eventHandlers.containsKey(eventType)) {
       _eventHandlers[eventType] = [];
     }
-    _eventHandlers[eventType]!.add(EventHandlerEntry<State>(handler, config));
+    final entry = EventHandlerEntry<State>(handler, config);
+    _eventHandlers[eventType]!.add(entry);
+
+    if (config.transformer != null) {
+      final controller = StreamController<Event>.broadcast();
+      _eventStreams[entry] = controller;
+
+      final transformer = config.transformer!;
+      final stream = transformer(
+        controller.stream,
+        (event) => _runHandler(entry, event),
+      );
+      stream.listen(null); // Just start the stream
+    }
+  }
+
+  Stream<dynamic> _runHandler(EventHandlerEntry<State> entry, dynamic event) {
+    final controller = StreamController<dynamic>();
+    final emitter = Emitter<State>(_emit);
+
+    controller.onCancel = () {
+      emitter.close();
+    };
+
+    Future.sync(() => entry.handler(event, emitter))
+        .then((_) {
+          if (!controller.isClosed) controller.close();
+        })
+        .catchError((Object e, StackTrace s) {
+          if (!controller.isClosed) {
+            controller.addError(e, s);
+            controller.close();
+          }
+        });
+
+    return controller.stream;
+  }
+
+  Future<void> _executeHandler(
+    EventHandlerEntry<State> entry,
+    dynamic event,
+  ) async {
+    final result = entry.handler(event, Emitter<State>(_emit));
+    if (result is Future) await result;
   }
 
   @override
@@ -139,8 +189,11 @@ abstract class Qubit<Event, State> implements BaseQubit {
             _hasParentHandler(eventType);
         if (isIgnoredByParent) continue;
 
-        final result = entry.handler(typedEvent, Emitter<State>(_emit));
-        if (result is Future) await result;
+        if (entry.config.transformer != null) {
+          _eventStreams[entry]?.add(typedEvent);
+        } else {
+          await _executeHandler(entry, typedEvent);
+        }
       }
     }
 
@@ -156,17 +209,27 @@ abstract class Qubit<Event, State> implements BaseQubit {
   }
 
   @override
-  Future<void> dispatch<T extends BaseQubit, E>(E event) async {
+  Future<void> dispatch<T extends BaseQubit, E>(E event) {
     if (_parent == null) {
-      throw StateError('Cannot dispatch to sibling: Qubit has no parent');
+      final completer = Completer<void>();
+      _pendingInitializers.add(() async {
+        try {
+          await _parent.dispatch<T, E>(event);
+          completer.complete();
+        } catch (e, s) {
+          completer.completeError(e, s);
+        }
+      });
+      return completer.future;
     }
-    await _parent.dispatch<T, E>(event);
+    return _parent.dispatch<T, E>(event);
   }
 
   @override
   void listenTo<T extends BaseQubit>(void Function(dynamic state) callback) {
     if (_parent == null) {
-      throw StateError('Cannot listen to sibling: Qubit has no parent');
+      _pendingInitializers.add(() => _parent.listenTo<T>(callback));
+      return;
     }
     _parent.listenTo<T>(callback);
   }
@@ -194,6 +257,12 @@ abstract class Qubit<Event, State> implements BaseQubit {
   @override
   void setParent(dynamic parent) {
     _parent = parent;
+
+    // Execute any pending initializers that were called in the constructor
+    for (final initializer in _pendingInitializers) {
+      initializer();
+    }
+    _pendingInitializers.clear();
   }
 
   @override
@@ -213,6 +282,13 @@ abstract class Qubit<Event, State> implements BaseQubit {
     }
 
     _isClosed = true;
+
+    // Close all event streams
+    for (final controller in _eventStreams.values) {
+      await controller.close();
+    }
+    _eventStreams.clear();
+
     await _stateController.close();
   }
 }

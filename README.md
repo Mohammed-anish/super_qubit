@@ -264,6 +264,48 @@ listenTo<CartItemsQubit>((state) {
 });
 ```
 
+#### Internal Communication
+You can call `listenTo` or `dispatch` directly from a **Child Qubit** constructor. These calls are automatically queued and executed once the Qubit is registered with its parent `SuperQubit`.
+
+```dart
+class ProfileQubit extends Qubit<UserEvent, ProfileState> {
+  ProfileQubit() : super(const ProfileState()) {
+    // Safely listen to sibling Qubits in the constructor
+    listenTo<AuthQubit>((authState) {
+      if (!authState.isLoggedIn) {
+        add(ClearProfileEvent());
+      }
+    });
+
+    // Safely dispatch to sibling Qubits in the constructor
+    dispatch<LoadQubit, RefreshEvent>(RefreshEvent());
+  }
+}
+```
+
+### Event Transformers
+
+Control how events are processed (e.g., debouncing search or throttling clicks).
+
+```dart
+on<SearchEvent>(
+  (event, emit) async {
+    // ... search logic ...
+  },
+  config: EventHandlerConfig(
+    transformer: Transformers.debounce(const Duration(milliseconds: 300)),
+  ),
+);
+```
+
+#### Built-in Transformers:
+- `Transformers.sequential()`: Processes events one by one (default).
+- `Transformers.concurrent()`: Processes multiple events at the same time.
+- `Transformers.restartable()`: Cancels previous execution and starts the newest one.
+- `Transformers.droppable()`: Ignores new events while an event is being processed.
+- `Transformers.debounce(Duration)`: Waits for a quiet period before processing.
+- `Transformers.throttle(Duration)`: Processes the first event and ignores others for a period.
+
 ### Accessing Child Qubits
 
 ```dart
@@ -329,7 +371,7 @@ Base class for state management.
 - `State` - Type of state this Qubit manages
 
 **Methods:**
-- `on<E extends Event>(handler, [config])` - Register event handler
+- `on<E extends Event>(handler, {config})` - Register event handler
 - `add(event)` - Add event to be processed
 - `close()` - Close and clean up
 

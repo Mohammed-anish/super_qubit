@@ -14,9 +14,7 @@ import 'devtools.dart';
 ///
 /// Example:
 /// ```dart
-/// class CartSuperQubit extends SuperQubit {
-///   @override
-///   void init() {
+///   CartSuperQubit() {
 ///     // Listen to child events
 ///     on<LoadQubit, LoadEvent>((event, emit) {
 ///       print('Parent handling load event');
@@ -48,6 +46,13 @@ abstract class SuperQubit {
   /// Map of state listeners for child Qubits.
   final Map<Type, List<StreamSubscription>> _stateListeners = {};
 
+  /// Controllers for transformed parent event streams.
+  final Map<_ParentEventHandlerEntry, StreamController<dynamic>>
+  _parentEventStreams = {};
+
+  /// Pending actions to be executed once child Qubits are registered.
+  final List<void Function()> _pendingActions = [];
+
   /// Whether this SuperQubit has been closed.
   bool _isClosed = false;
 
@@ -65,34 +70,12 @@ abstract class SuperQubit {
         SuperQubitDevTools.onQubitRegistered(this, qubit);
       }
     }
-    // Call init after all qubits are registered
-    init();
-  }
 
-  /// Initialize the SuperQubit after child Qubits are registered.
-  ///
-  /// Override this method to set up event handlers and state listeners.
-  /// This is called automatically after [registerQubits].
-  ///
-  /// Example:
-  /// ```dart
-  /// @override
-  /// void init() {
-  ///   // Cross-Qubit communication
-  ///   listenTo<CartItemsQubit>((state) {
-  ///     if (state.isEmpty) {
-  ///       dispatch<LoadQubit, LoadEvent>(LoadEvent());
-  ///     }
-  ///   });
-  ///
-  ///   // Parent-level event handlers
-  ///   on<LoadQubit, LoadEvent>((event, emit) {
-  ///     print('Parent handling load event');
-  ///   });
-  /// }
-  /// ```
-  void init() {
-    // Override in subclasses to set up handlers and listeners
+    // Execute any pending actions that were called in the constructor
+    for (final action in _pendingActions) {
+      action();
+    }
+    _pendingActions.clear();
   }
 
   /// Register a parent-level event handler for events targeting a specific child Qubit.
@@ -114,9 +97,58 @@ abstract class SuperQubit {
     if (!_parentHandlers.containsKey(key)) {
       _parentHandlers[key] = [];
     }
-    _parentHandlers[key]!.add(
-      _ParentEventHandlerEntry(handler, config ?? const EventHandlerConfig()),
-    );
+    final actualConfig = config ?? const EventHandlerConfig();
+    final entry = _ParentEventHandlerEntry(handler, actualConfig);
+    _parentHandlers[key]!.add(entry);
+
+    if (actualConfig.transformer != null) {
+      final controller = StreamController<dynamic>.broadcast();
+      _parentEventStreams[entry] = controller;
+
+      final transformer = actualConfig.transformer!;
+      final stream = transformer(
+        controller.stream,
+        (event) => _runParentHandler(entry, ChildQubit, event),
+      );
+      stream.listen(null); // Just start the stream
+    }
+  }
+
+  Stream<dynamic> _runParentHandler(
+    _ParentEventHandlerEntry entry,
+    Type childType,
+    dynamic event,
+  ) {
+    final controller = StreamController<dynamic>();
+    final childQubit = _qubits[childType];
+    final emitter = childQubit!.emitter; // This actually creates a new Emitter
+
+    controller.onCancel = () {
+      emitter.close();
+    };
+
+    Future.sync(() => entry.handler(event, emitter))
+        .then((_) {
+          if (!controller.isClosed) controller.close();
+        })
+        .catchError((Object e, StackTrace s) {
+          if (!controller.isClosed) {
+            controller.addError(e, s);
+            controller.close();
+          }
+        });
+
+    return controller.stream;
+  }
+
+  Future<void> _executeParentHandler(
+    _ParentEventHandlerEntry entry,
+    Type childType,
+    dynamic event,
+  ) async {
+    final childQubit = _qubits[childType];
+    final result = entry.handler(event, childQubit!.emitter);
+    if (result is Future) await result;
   }
 
   /// Dispatch an event to a specific child Qubit.
@@ -126,8 +158,21 @@ abstract class SuperQubit {
   /// dispatch<LoadQubit, LoadEvent>(LoadEvent());
   /// ```
   Future<void> dispatch<T extends BaseQubit, E>(E event) async {
+    if (!_qubits.containsKey(T)) {
+      final completer = Completer<void>();
+      _pendingActions.add(() async {
+        try {
+          final qubit = getQubit<T>();
+          await qubit.add(event);
+          completer.complete();
+        } catch (e, s) {
+          completer.completeError(e, s);
+        }
+      });
+      return completer.future;
+    }
     final qubit = getQubit<T>();
-    qubit.add(event);
+    return qubit.add(event);
   }
 
   /// Listen to state changes from a specific child Qubit.
@@ -143,6 +188,10 @@ abstract class SuperQubit {
   /// });
   /// ```
   void listenTo<T extends BaseQubit>(void Function(dynamic state) callback) {
+    if (!_qubits.containsKey(T)) {
+      _pendingActions.add(() => listenTo<T>(callback));
+      return;
+    }
     final qubit = getQubit<T>();
     final subscription = qubit.stream.listen(callback);
 
@@ -200,10 +249,10 @@ abstract class SuperQubit {
           continue; // Skip parent handler
         }
 
-        // Execute parent handler using dynamic invocation
-        final result = entry.handler(event, childQubit!.emitter);
-        if (result is Future) {
-          await result;
+        if (entry.config.transformer != null) {
+          _parentEventStreams[entry]?.add(event);
+        } else {
+          await _executeParentHandler(entry, childType, event);
         }
       }
     }
@@ -230,6 +279,12 @@ abstract class SuperQubit {
       await qubit.close();
     }
     _qubits.clear();
+
+    // Close all parent event streams
+    for (final controller in _parentEventStreams.values) {
+      await controller.close();
+    }
+    _parentEventStreams.clear();
   }
 }
 

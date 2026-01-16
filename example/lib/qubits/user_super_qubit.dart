@@ -4,8 +4,7 @@ import 'profile_qubit.dart';
 import '../events/user_events.dart';
 
 class UserSuperQubit extends SuperQubit {
-  @override
-  void init() {
+  UserSuperQubit() {
     // When user logs in, load their profile
     listenTo<AuthQubit>((state) {
       if (state.isLoggedIn && state.username != null) {

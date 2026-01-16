@@ -2,6 +2,9 @@
 DESIGN_SPEC.md
 HOT_RESTART_REQUIRED.md
 FEATURES_ROADMAP.md
+FUTURE_FEATURES.md
+HEADACHES_RESEARCH.md
+STATE_MANAGEMENT_HEADACHES.md
 MEDIUM_ARTICLE.md
 inspiration.txt
 
@@ -31,3 +34,9 @@ multi_state_example/pubspec.lock
 *.swp
 *.swo
 *~
+
+# Firebase
+example/.firebaserc
+example/firebase.json
+**/google-services.json
+**/GoogleService-Info.plist

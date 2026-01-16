@@ -1,3 +1,19 @@
+## 1.2.0
+
+- **Lazy Qubit Initialization**: Removed the need for an `init()` method in child Qubits. Calls to `listenTo` and `dispatch` in the `Qubit` constructor are now automatically queued and executed once the parent is assigned.
+- **Improved Internal Communication**: Sibling communication is now safe to use directly in `Qubit` constructors thanks to the new queuing mechanism.
+- **Resource Management**: Added cleanup for `_parentEventStreams` in `SuperQubit` to prevent memory leaks when disposing.
+- **Enhanced Emitter Stability**: Fixed issues where parent handlers might not be executed correctly when transformers are involved.
+- **Enhanced Examples**: Added a complex search and cart example demonstrating debounced search, sibling-to-sibling communication, and direct parent-to-child state control.
+- **Bug Fix**: Resolved `StateError` when calling `listenTo` during Qubit construction.
+
+## 1.1.0
+
+- **Event Transformers**: Added support for event transformers in `Qubit` and `SuperQubit`.
+- Built-in transformers: `sequential`, `concurrent`, `restartable`, `droppable`, `debounce`, and `throttle`.
+- **API Standardization**: Changed `Qubit.on` config parameter to a named parameter for consistency with `SuperQubit.on`.
+- **Emitter Cancellation**: Automatic cancellation of state emissions when a transformer cancels an event execution.
+
 ## 1.0.0
 
 - **DevTools Integration**: Added DevTools extension for `super_qubit`.

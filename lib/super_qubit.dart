@@ -7,6 +7,9 @@ export 'src/event_handler.dart'
         Emitter,
         EventHandlerConfig,
         ParentEventHandler,
+        Transformers,
+        EventTransformer,
+        EventMapper,
         ignoreWhenParentDefines,
         ignoreWhenChildDefines;
 export 'src/qubit_provider.dart'

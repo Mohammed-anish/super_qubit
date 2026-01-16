@@ -21,6 +21,16 @@ class RemoveItemEvent extends CartItemsEvent {
 
 class ClearCartEvent extends CartItemsEvent {}
 
+class SearchEvent extends CartItemsEvent {
+  final String query;
+  SearchEvent(this.query);
+}
+
+class FilterItemsEvent extends CartItemsEvent {
+  final String filter;
+  FilterItemsEvent(this.filter);
+}
+
 // Events for CartFilter Qubit
 abstract class CartFilterEvent {}
 

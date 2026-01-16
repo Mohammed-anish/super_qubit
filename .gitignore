@@ -25,4 +25,13 @@ coverage/
 .test_coverage.dart
 extension/devtools/build/
 FEATURES_ROADMAP.md
+FUTURE_FEATURES.md
+HEADACHES_RESEARCH.md
+STATE_MANAGEMENT_HEADACHES.md
 MEDIUM_ARTICLE.md
+
+# Firebase
+example/.firebaserc
+example/firebase.json
+**/google-services.json
+**/GoogleService-Info.plist

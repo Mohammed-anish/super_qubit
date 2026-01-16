@@ -11,8 +11,8 @@ class LoginEvent extends UserEventBase {
 class LogoutEvent extends UserEventBase {}
 
 class UpdateProfileEvent extends UserEventBase {
-  final String displayName;
-  final String email;
+  final String? displayName;
+  final String? email;
 
   UpdateProfileEvent({required this.displayName, required this.email});
 }

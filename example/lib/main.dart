@@ -138,6 +138,26 @@ class CartPage extends StatelessWidget {
             },
           ),
 
+          // Search Bar demonstrating debounced events
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: 'Search items (debounced 500ms)...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                context.read<CartSuperQubit, CartItemsQubit>().add(
+                  SearchEvent(value),
+                );
+              },
+            ),
+          ),
+
           // Filter section using QubitConsumer (combines builder + listener)
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -296,6 +316,18 @@ class CartPage extends StatelessWidget {
             },
             tooltip: 'Trigger Load',
             child: const Icon(Icons.refresh),
+          ),
+          const SizedBox(height: 8),
+          FloatingActionButton(
+            heroTag: 'force_reset',
+            onPressed: () {
+              // Demonstrate Parent-to-Child via Parent's intercepted event
+              context.read<CartSuperQubit, CartItemsQubit>().add(
+                SearchEvent('force_reset'),
+              );
+            },
+            tooltip: 'Force Reset (Parent-to-Child)',
+            child: const Icon(Icons.warning_amber),
           ),
         ],
       ),
